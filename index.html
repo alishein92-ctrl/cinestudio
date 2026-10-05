@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CinéStudio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0b12;--card:#151522;--in:#0f0f19;--line:#2a2a3d;--txt:#ececf4;--mut:#9a9ab3;--acc:#ff5a5f;--acc2:#ffb347;--ok:#3ecf8e;--err:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+header{padding:26px 16px 6px;text-align:center}
+h1{margin:0;font-size:clamp(28px,6vw,42px);font-weight:800;letter-spacing:-.02em}
+h1 span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+header p{color:var(--mut);margin:4px 0 0}
+main{max-width:1000px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px}
+.card>h2{margin:0 0 12px;font-size:18px;display:flex;gap:10px;align-items:center}
+.num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#111;font-size:14px;font-weight:800;flex:0 0 auto}
+label{display:block;font-size:13px;color:var(--mut);margin:8px 0 4px}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;background:var(--in);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font:inherit}
+textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 160px}
+.row>.auto{flex:0 0 auto}
+button{background:linear-gradient(135deg,var(--acc),var(--acc2));color:#111;border:0;border-radius:10px;padding:10px 14px;font:600 14px Inter,sans-serif;cursor:pointer}
+button.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+button.sm{padding:6px 10px;font-size:13px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.small{font-size:13px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.item{border:1px solid var(--line);border-radius:12px;padding:10px;background:#12121d}
+.ph{aspect-ratio:3/4;border-radius:10px;background:var(--in) center/cover no-repeat;display:grid;place-items:center;font-size:34px;color:var(--mut);margin-bottom:8px;position:relative}
+.ph.wide{aspect-ratio:16/10}
+.ph .busy{position:absolute;inset:0;display:grid;place-items:center;background:#000a;border-radius:10px;font-size:13px;color:var(--acc2)}
+.scene{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px;background:#12121d}
+.scene-grid{display:grid;grid-template-columns:170px 1fr;gap:12px}
+.scene .start{aspect-ratio:9/16;border-radius:10px;background:var(--in) center/cover no-repeat;display:grid;place-items:center;color:var(--mut);font-size:30px;position:relative}
+.scene video{width:100%;border-radius:10px;margin-top:8px;background:#000}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:flex;gap:4px;align-items:center;border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:13px;cursor:pointer}
+.chip input{width:auto;margin:0}
+.badge{font-size:12px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);color:var(--mut)}
+.badge.ok{color:var(--ok);border-color:var(--ok)}.badge.err{color:var(--err);border-color:var(--err)}.badge.run{color:var(--acc2);border-color:var(--acc2)}
+.warn{color:var(--acc2);font-size:12px}
+#log{font:12px ui-monospace,monospace;color:var(--mut);max-height:150px;overflow:auto;white-space:pre-wrap;background:var(--in);border-radius:10px;padding:8px;margin-top:10px}
+.bar{height:8px;background:var(--in);border-radius:8px;overflow:hidden;margin-top:8px}.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .3s}
+.hidden{display:none!important}
+@media(max-width:620px){.scene-grid{grid-template-columns:1fr}.scene .start{max-width:220px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Ciné<span>Studio</span></h1>
+  <p>Tes personnages et tes décors restent les mêmes d'une scène à l'autre.</p>
+</header>
+<main>
+
+<section class="card">
+  <h2><span class="num">1</span>Clé API Agnes & style</h2>
+  <div class="row">
+    <input id="key" type="password" placeholder="Colle ta clé API Agnes (gratuite)">
+    <button class="ghost auto" id="saveKey">Enregistrer</button>
+  </div>
+  <div class="row">
+    <div><label>Style visuel</label>
+      <select id="style">
+        <option value="photorealistic live-action French comedy sitcom, real human actors, natural skin, warm cinematic lighting">Sitcom réaliste</option>
+        <option value="photorealistic cinematic live-action film, real human actors, 35mm film look">Film réaliste</option>
+        <option value="realistic handheld smartphone TikTok sketch, real people, natural light">Sketch façon TikTok</option>
+        <option value="Pixar-like 3D animated film, expressive stylized human characters">Animation 3D</option>
+      </select></div>
+    <div><label>Format</label>
+      <select id="ratio"><option value="9:16">Vertical 9:16 (TikTok)</option><option value="16:9">Horizontal 16:9</option><option value="1:1">Carré 1:1</option></select></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2><span class="num">2</span>Casting — tes personnages</h2>
+  <p class="small">Décris un personnage (ou laisse vide pour un personnage aléatoire), puis « Créer la photo ». Tu peux aussi importer ta propre image.</p>
+  <div class="grid" id="chars"></div>
+  <div class="row" style="margin-top:10px"><button class="ghost auto" onclick="addItem('chars')">＋ Ajouter un personnage</button></div>
+</section>
+
+<section class="card">
+  <h2><span class="num">3</span>Décors — tes lieux</h2>
+  <p class="small">Chaque lieu est photographié une fois, vide, puis réutilisé dans toutes les scènes qui s'y passent.</p>
+  <div class="grid" id="places"></div>
+  <div class="row" style="margin-top:10px"><button class="ghost auto" onclick="addItem('places')">＋ Ajouter un lieu</button></div>
+</section>
+
+<section class="card">
+  <h2><span class="num">4</span>L'histoire</h2>
+  <label>Raconte ton histoire simplement (qui, où, ce qui se passe, la chute)</label>
+  <textarea id="story" style="min-height:110px" placeholder="Ex : Une fille rend visite à sa mère et lui annonce, en pleurs, qu'elle veut divorcer…"></textarea>
+  <div class="row">
+    <div><label>Nombre de scènes</label><select id="nScenes"><option value="0">Automatique</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option></select></div>
+    <div><label>&nbsp;</label><button id="write">✍️ Écrire le sketch</button></div>
+  </div>
+  <p class="small">L'IA découpe en scènes, garde des répliques courtes (elles sont mieux prononcées) et crée les personnages/lieux manquants dans le casting.</p>
+</section>
+
+<section class="card">
+  <h2><span class="num">5</span>Scènes</h2>
+  <div id="scenes"></div>
+  <div class="row"><button class="ghost auto" onclick="addScene()">＋ Ajouter une scène</button></div>
+</section>
+
+<section class="card">
+  <h2><span class="num">6</span>Génération</h2>
+  <div class="row">
+    <button id="genStarts">🖼️ Créer toutes les images de départ</button>
+    <button id="genVideos">🎬 Générer toutes les vidéos</button>
+    <button id="stop" class="ghost auto" disabled>⏹ Arrêter</button>
+  </div>
+  <p class="small">Conseil : crée d'abord les images de départ et vérifie-les (c'est rapide), puis lance les vidéos. Version gratuite : environ 1 vidéo par minute, plus l'attente du serveur.</p>
+  <div class="bar"><i id="prog"></i></div>
+  <div id="log"></div>
+</section>
+
+<section class="card">
+  <h2><span class="num">7</span>Télécharger & assembler</h2>
+  <p class="small">1) Télécharge chaque scène (clic droit sur la vidéo → « Enregistrer la vidéo sous… », nomme-les scene 1, scene 2…). 2) Sélectionne-les ici : le site les colle en un seul MP4.</p>
+  <div id="dlList" class="row" style="gap:8px"></div>
+  <div class="row" style="margin-top:12px">
+    <input type="file" id="clips" accept="video/mp4,video/*" multiple class="hidden">
+    <button id="pickClips" class="auto">📂 Choisir les scènes téléchargées</button>
+    <button id="assemble" class="auto" disabled>🎞️ Assembler en une vidéo</button>
+  </div>
+  <div id="clipList" class="small" style="margin-top:8px"></div>
+  <div class="bar"><i id="aprog"></i></div>
+  <div id="final" style="margin-top:10px"></div>
+</section>
+
+</main>
+<script>
+/* ================= config & état ================= */
+const API='https://apihub.agnes-ai.com';
+const VIDEO_MODEL='agnes-video-2.5-flash', CHAT_MODEL='agnes-2.5-flash', IMG_MODEL='agnes-image-2.1-flash';
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}};
+let P={chars:[],places:[],scenes:[],style:'',ratio:'9:16',story:'',videoMode:''};
+const RUN={stop:false,lastVideo:0,busy:new Set()};
+
+function log(m){const l=$('log');l.textContent+=`[${new Date().toLocaleTimeString()}] ${m}\n`;l.scrollTop=l.scrollHeight}
+function save(){P.style=$('style').value;P.ratio=$('ratio').value;P.story=$('story').value;
+  if(!store.set('cinestudio',JSON.stringify(P)))log('⚠️ Sauvegarde locale pleine : utilise des images générées plutôt qu\'importées.')}
+function load(){try{const p=JSON.parse(store.get('cinestudio')||'null');if(p)P={...P,...p}}catch(e){}
+  if(P.style)$('style').value=P.style; $('ratio').value=P.ratio||'9:16'; $('story').value=P.story||'';
+  if(!P.chars.length)P.chars=[newItem()]; if(!P.places.length)P.places=[newItem()];}
+const newItem=()=>({id:uid(),name:'',desc:'',ref:'',img:''});
+const key=()=>$('key').value.trim();
+$('key').value=store.get('agnesKey')||'';
+$('saveKey').onclick=()=>{store.set('agnesKey',key());log('Clé enregistrée.')};
+$('style').onchange=$('ratio').onchange=save;$('story').oninput=save;
+
+/* ================= appels API (avec nouvelles tentatives) ================= */
+async function api(path,body,method='POST'){
+  if(!key())throw new Error('Ajoute ta clé API Agnes (étape 1).');
+  for(let k=0;k<45;k++){
+    if(RUN.stop&&path==='/v1/videos')throw new Error('arrêté');
+    let r,txt;
+    try{r=await fetch(API+path,{method,headers:{'Authorization':'Bearer '+key(),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});txt=await r.text()}
+    catch(e){log('Réseau indisponible, nouvel essai…');await sleep(15000);continue}
+    let j;try{j=JSON.parse(txt)}catch(e){j={raw:txt}}
+    if(r.ok&&!(j.code==='video_queue_full'))return j;
+    const msg=(j.error&&(j.error.message||j.error))||j.message||txt.slice(0,200)||String(r.status);
+    if(r.status===429||r.status===503||/queue is full|retry later|upstream|rate limit/i.test(msg)){
+      log(`Serveur Agnes occupé (${r.status}), nouvel essai dans ${path==='/v1/videos'?60:20} s…`);
+      await sleep(path==='/v1/videos'?60000:20000); if(path==='/v1/videos')RUN.lastVideo=Date.now(); continue}
+    const e=new Error(msg);e.status=r.status;throw e;
+  }
+  throw new Error('Serveur Agnes saturé trop longtemps, réessaie plus tard.');
+}
+async function chat(text,images=[]){
+  const content=[{type:'text',text},...images.filter(Boolean).map(u=>({type:'image_url',image_url:{url:u}}))];
+  const j=await api('/v1/chat/completions',{model:CHAT_MODEL,messages:[{role:'user',content}],temperature:.7});
+  return (j.choices[0].message.content||'').trim();
+}
+function parseJSON(t){const m=t.match(/[\[{][\s\S]*[\]}]/);if(!m)throw new Error('Réponse IA illisible');return JSON.parse(m[0])}
+const sizeFor=(kind)=>{const r=$('ratio').value;if(kind==='char')return '768x1344';if(r==='9:16')return '768x1344';if(r==='1:1')return '1024x1024';return '1344x768'};
+async function image(prompt,size,refs){
+  const body={model:IMG_MODEL,prompt,size};
+  const imgs=(refs||[]).filter(Boolean); if(imgs.length)body.image=imgs.length===1?imgs[0]:imgs;
+  const j=await api('/v1/images/generations',body);
+  const d=j.data&&j.data[0]; if(!d)throw new Error('Pas d\'image renvoyée');
+  return d.url||(d.b64_json?'data:image/png;base64,'+d.b64_json:'');
+}
+
+/* ================= casting & décors ================= */
+function addItem(kind){P[kind].push(newItem());renderItems(kind);save()}
+function delItem(kind,id){P[kind]=P[kind].filter(x=>x.id!==id);renderItems(kind);renderScenes();save()}
+function renderItems(kind){
+  const box=$(kind),isChar=kind==='chars';box.innerHTML='';
+  P[kind].forEach(it=>{
+    const d=document.createElement('div');d.className='item';
+    d.innerHTML=`<div class="ph ${isChar?'':'wide'}" style="${it.img?`background-image:url('${it.img}')`:''}">${it.img?'':(isChar?'🧑':'🏠')}${RUN.busy.has(it.id)?'<div class="busy">Création…</div>':''}</div>
+      <input type="text" placeholder="${isChar?'Nom (ex : Camille)':'Nom du lieu (ex : Salon de Maman)'}" value="${esc(it.name)}" data-f="name">
+      <textarea placeholder="${isChar?'Description (âge, visage, cheveux, tenue…) — vide = aléatoire':'Description (pièce, meubles, couleurs, époque…) — vide = aléatoire'}" data-f="desc">${esc(it.desc)}</textarea>
+      <div class="row" style="gap:6px;margin-top:6px">
+        <button class="sm auto" data-a="gen">${it.img?'↻ Refaire':'✨ Créer la photo'}</button>
+        <button class="sm ghost auto" data-a="imp">📁 Importer</button>
+        <button class="sm ghost auto" data-a="del" title="Supprimer">🗑</button>
+      </div><input type="file" accept="image/*" class="hidden" data-a="file">`;
+    d.querySelectorAll('[data-f]').forEach(el=>el.oninput=()=>{it[el.dataset.f]=el.value;if(el.dataset.f==='desc')it.ref='';save();if(el.dataset.f==='name')renderScenes()});
+    d.querySelector('[data-a=gen]').onclick=()=>genItem(kind,it);
+    d.querySelector('[data-a=del]').onclick=()=>delItem(kind,it.id);
+    const f=d.querySelector('[data-a=file]');d.querySelector('[data-a=imp]').onclick=()=>f.click();
+    f.onchange=()=>f.files[0]&&importItem(kind,it,f.files[0]);
+    box.appendChild(d);
+  });
+}
+async function genItem(kind,it){
+  const isChar=kind==='chars';RUN.busy.add(it.id);renderItems(kind);
+  try{
+    if(!it.desc.trim()){
+      const j=parseJSON(await chat(isChar
+        ?`Invente un personnage original et réaliste pour un sketch comique français${it.name?` nommé ${it.name}`:''}. Réponds en JSON : {"name":"prénom","look":"description physique précise en anglais : sexe, âge, visage, cheveux, tenue complète, accessoires (40 mots)"}`
+        :`Invente un lieu réaliste pour un sketch comique français${it.name?` appelé ${it.name}`:''}. Réponds en JSON : {"name":"nom court en français","look":"description précise en anglais : type de pièce, meubles principaux et leur position, couleurs, matières, fenêtres, lumière (45 mots)"}`));
+      if(!it.name)it.name=j.name; it.desc=j.look; it.ref=j.look;
+    }
+    if(!it.ref)it.ref=await chat(`Translate and enrich into a precise English visual description (max 50 words), no intro: ${it.desc}`);
+    const st=$('style').value;
+    it.img=await image(isChar
+      ?`Character reference photo, full body, front view, standing, plain light-gray studio background, sharp face, ${st}. Character: ${it.ref}`
+      :`Wide establishing shot of an empty location, nobody in it, eye-level, ${st}. Location: ${it.ref}`,
+      isChar?'768x1344':sizeFor('place'));
+    log(`${isChar?'Personnage':'Lieu'} « ${it.name} » créé.`);
+  }catch(e){log('Erreur : '+e.message);alert(e.message)}
+  RUN.busy.delete(it.id);renderItems(kind);renderScenes();save();
+}
+function fileToDataURL(file,max=1024){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85))};im.onerror=rej;im.src=URL.createObjectURL(file)})}
+async function importItem(kind,it,file){
+  RUN.busy.add(it.id);renderItems(kind);
+  try{it.img=await fileToDataURL(file);
+    it.ref=await chat(kind==='chars'
+      ?'Describe this person for an AI video generator, in English, max 50 words: gender, apparent age, face, hair, full outfit, accessories. No intro.'
+      :'Describe this place for an AI video generator, in English, max 50 words: room type, main furniture and positions, colors, materials, windows, light. No intro.',[it.img]);
+    if(!it.desc)it.desc=it.ref; log(`Image importée pour « ${it.name||'sans nom'} ».`);
+  }catch(e){log('Erreur import : '+e.message);alert(e.message)}
+  RUN.busy.delete(it.id);renderItems(kind);save();
+}
+
+/* ================= écriture du sketch ================= */
+$('write').onclick=async()=>{
+  const story=$('story').value.trim(); if(!story)return alert('Raconte d\'abord ton histoire.');
+  $('write').disabled=true;log('Écriture du sketch…');
+  try{
+    const cast=P.chars.filter(c=>c.name).map(c=>c.name), places=P.places.filter(p=>p.name).map(p=>p.name), n=+$('nScenes').value;
+    const j=parseJSON(await chat(`Tu es scénariste de sketchs comiques courts pour TikTok. Découpe cette histoire en ${n||'4 à 7'} scènes vidéo de 5 à 10 secondes.
+Histoire : ${story}
+Personnages déjà existants : ${cast.join(', ')||'aucun'}. Lieux déjà existants : ${places.join(', ')||'aucun'}.
+Règles : réutilise les personnages et lieux existants quand c'est possible ; garde le même lieu tant que l'histoire ne change pas d'endroit ; UNE seule réplique par scène, en français, 10 mots maximum, facile à prononcer (écris les nombres et prix en toutes lettres) ; la chute dans la dernière scène.
+Réponds UNIQUEMENT en JSON :
+{"characters":[{"name":"","look":"description physique en anglais si nouveau personnage"}],
+ "places":[{"name":"","look":"description en anglais si nouveau lieu"}],
+ "scenes":[{"place":"nom du lieu","characters":["noms présents"],"action":"ce qui se passe à l'image, en français (positions, gestes, expressions, cadrage)","speaker":"nom de celui qui parle ou vide","line":"réplique","seconds":6}]}`));
+    for(const c of j.characters||[]) if(c.name&&!P.chars.some(x=>x.name.toLowerCase()===c.name.toLowerCase())){const e=P.chars.find(x=>!x.name&&!x.img);const it=e||newItem();it.name=c.name;it.desc=c.look||'';it.ref=c.look||'';if(!e)P.chars.push(it)}
+    for(const p of j.places||[]) if(p.name&&!P.places.some(x=>x.name.toLowerCase()===p.name.toLowerCase())){const e=P.places.find(x=>!x.name&&!x.img);const it=e||newItem();it.name=p.name;it.desc=p.look||'';it.ref=p.look||'';if(!e)P.places.push(it)}
+    const byName=(arr,n)=>(arr.find(x=>x.name.toLowerCase()===String(n||'').toLowerCase())||{}).id||'';
+    let prevPlace='';
+    P.scenes=(j.scenes||[]).map(s=>{const place=byName(P.places,s.place)||(P.places[0]||{}).id||'';const sc={id:uid(),place,chars:(s.characters||[]).map(n=>byName(P.chars,n)).filter(Boolean),action:s.action||'',speaker:byName(P.chars,s.speaker),line:s.line||'',seconds:Math.min(12,Math.max(4,+s.seconds||6)),cont:place===prevPlace,start:'',video:'',status:'à faire'};prevPlace=place;return sc});
+    renderItems('chars');renderItems('places');renderScenes();save();
+    const missing=[...P.chars,...P.places].filter(x=>x.name&&!x.img).length;
+    log(`Sketch écrit : ${P.scenes.length} scènes.${missing?` Crée maintenant les photos des ${missing} personnage(s)/lieu(x) sans image (étapes 2 et 3).`:''}`);
+  }catch(e){log('Erreur : '+e.message);alert(e.message)}
+  $('write').disabled=false;
+};
+
+/* ================= scènes ================= */
+function addScene(){const last=P.scenes[P.scenes.length-1];P.scenes.push({id:uid(),place:last?last.place:(P.places[0]||{}).id||'',chars:last?[...last.chars]:[],action:'',speaker:'',line:'',seconds:6,cont:!!last,start:'',video:'',status:'à faire'});renderScenes();save()}
+const nameOf=(arr,id)=>(arr.find(x=>x.id===id)||{}).name||'?';
+function renderScenes(){
+  const box=$('scenes');box.innerHTML='';
+  P.scenes.forEach((s,i)=>{
+    const words=(s.line||'').trim().split(/\s+/).filter(Boolean).length;
+    const cls=s.status==='vidéo prête'?'ok':/^erreur/.test(s.status)?'err':/en cours|création/.test(s.status)?'run':'';
+    const d=document.createElement('div');d.className='scene';
+    d.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:8px"><b class="auto">Scène ${i+1}</b><span class="badge ${cls} auto">${esc(s.status)}</span></div>
+    <div class="scene-grid"><div><div class="start" style="${s.start?`background-image:url('${s.start}')`:''}">${s.start?'':'🖼️'}</div>
+      <button class="sm ghost" style="width:100%;margin-top:6px" data-a="start">${s.start?'↻ Refaire l\'image':'🖼️ Image de départ'}</button>
+      <button class="sm" style="width:100%;margin-top:6px" data-a="video" ${s.start?'':'disabled'}>🎬 ${s.video?'Refaire la vidéo':'Générer la vidéo'}</button></div>
+    <div>
+      <div class="row"><div><label>Lieu</label><select data-f="place">${P.places.map(p=>`<option value="${p.id}" ${p.id===s.place?'selected':''}>${esc(p.name||'(sans nom)')}</option>`).join('')}</select></div>
+        <div class="auto" style="flex:0 0 110px"><label>Durée (s)</label><input type="number" min="4" max="12" value="${s.seconds}" data-f="seconds"></div></div>
+      <label>Personnages présents</label><div class="chips">${P.chars.map(c=>`<label class="chip"><input type="checkbox" value="${c.id}" ${s.chars.includes(c.id)?'checked':''} data-c>${esc(c.name||'(sans nom)')}</label>`).join('')}</div>
+      <label>Action à l'image</label><textarea data-f="action" placeholder="Ex : Camille et Maman sont assises sur le canapé, Camille pleure…">${esc(s.action)}</textarea>
+      <div class="row"><div class="auto" style="flex:0 0 150px"><label>Qui parle</label><select data-f="speaker"><option value="">Personne</option>${P.chars.map(c=>`<option value="${c.id}" ${c.id===s.speaker?'selected':''}>${esc(c.name||'?')}</option>`).join('')}</select></div>
+        <div><label>Réplique (courte !)</label><input type="text" data-f="line" value="${esc(s.line)}" placeholder="10 mots maximum"></div></div>
+      ${words>10?`<div class="warn">⚠️ ${words} mots : au-delà de 10, l'IA prononce souvent mal. Raccourcis ou coupe en deux scènes.</div>`:''}
+      <div class="row" style="margin-top:6px"><label class="chip auto" title="Reprend l'image de départ de la scène précédente : même pièce, mêmes meubles, mêmes places"><input type="checkbox" data-f="cont" ${s.cont?'checked':''} ${i===0?'disabled':''}>Continuité avec la scène précédente</label>
+        <button class="sm ghost auto" data-a="up" ${i===0?'disabled':''}>↑</button><button class="sm ghost auto" data-a="down" ${i===P.scenes.length-1?'disabled':''}>↓</button><button class="sm ghost auto" data-a="del">🗑</button></div>
+      ${s.video?`<video src="${s.video}" controls playsinline preload="metadata"></video><div class="small">Clic droit sur la vidéo → « Enregistrer la vidéo sous… » → <b>scene ${i+1}.mp4</b> · <a href="${s.video}" target="_blank" style="color:var(--acc2)">ouvrir</a></div>`:''}
+    </div></div>`;
+    d.querySelectorAll('[data-f]').forEach(el=>el.onchange=el.oninput=(ev)=>{const f=el.dataset.f;s[f]=el.type==='checkbox'?el.checked:f==='seconds'?Math.min(12,Math.max(4,+el.value||6)):el.value;save();if((f==='line'||f==='place')&&ev.type==='change')renderScenes()});
+    d.querySelectorAll('[data-c]').forEach(el=>el.onchange=()=>{s.chars=[...d.querySelectorAll('[data-c]:checked')].map(x=>x.value);save()});
+    d.querySelector('[data-a=start]').onclick=()=>genStart(i);
+    d.querySelector('[data-a=video]').onclick=()=>genVideo(i);
+    d.querySelector('[data-a=del]').onclick=()=>{P.scenes.splice(i,1);renderScenes();save()};
+    d.querySelector('[data-a=up]').onclick=()=>{[P.scenes[i-1],P.scenes[i]]=[P.scenes[i],P.scenes[i-1]];renderScenes();save()};
+    d.querySelector('[data-a=down]').onclick=()=>{[P.scenes[i+1],P.scenes[i]]=[P.scenes[i],P.scenes[i+1]];renderScenes();save()};
+    box.appendChild(d);
+  });
+  renderDownloads();
+}
+
+/* ================= image de départ (cohérence) ================= */
+async function genStart(i){
+  const s=P.scenes[i],place=P.places.find(p=>p.id===s.place),chars=s.chars.map(id=>P.chars.find(c=>c.id===id)).filter(Boolean);
+  const prev=i>0&&s.cont?P.scenes[i-1]:null;
+  if(prev&&!prev.start){alert(`Crée d'abord l'image de départ de la scène ${i}.`);return false}
+  if(place&&!place.img||chars.some(c=>!c.img)){alert('Crée d\'abord les photos du lieu et des personnages de cette scène (étapes 2 et 3).');return false}
+  s.status='création de l\'image…';renderScenes();
+  try{
+    const refs=[],parts=[];
+    if(prev){refs.push(prev.start);parts.push(`Image ${refs.length} is the PREVIOUS SHOT of the same scene: keep exactly the same room, same furniture and their positions, same lighting, same camera side, and the same clothing; characters keep their positions (sitting stays sitting on the same seat) unless the action below explicitly changes it.`)}
+    if(place){refs.push(place.img);parts.push(`Image ${refs.length} is the LOCATION reference "${place.name}" (${place.ref||place.desc}): reproduce this exact place.`)}
+    chars.forEach(c=>{refs.push(c.img);parts.push(`Image ${refs.length} is the CHARACTER "${c.name}" (${c.ref||c.desc}): same face, same hair, same outfit.`)});
+    const prompt=`One single film frame, ${$('style').value}, ${$('ratio').value} framing. ${parts.join(' ')}
+Characters in the frame: ${chars.map(c=>c.name).join(', ')||'none'}. Action of this shot: ${s.action}. ${s.speaker?nameOf(P.chars,s.speaker)+' is about to speak.':''} No text, no subtitles.`;
+    s.start=await image(prompt,sizeFor('scene'),refs.slice(0,4));
+    s.status='image prête';log(`Scène ${i+1} : image de départ créée.`);
+  }catch(e){s.status='erreur image : '+e.message;log(`Scène ${i+1} : ${e.message}`)}
+  renderScenes();save();return !!s.start;
+}
+
+/* ================= vidéo ================= */
+async function videoSlot(){const g=62000-(Date.now()-RUN.lastVideo);if(g>0){log(`Pause ${Math.ceil(g/1000)} s (limite gratuite : 1 vidéo/min)…`);await sleep(g)}RUN.lastVideo=Date.now()}
+async function genVideo(i){
+  const s=P.scenes[i]; if(!s.start&&!(await genStart(i)))return;
+  const chars=s.chars.map(id=>P.chars.find(c=>c.id===id)).filter(Boolean),place=P.places.find(p=>p.id===s.place);
+  const spk=s.speaker?nameOf(P.chars,s.speaker):'';
+  const prompt=`${$('style').value}. Continue exactly from the first frame: same characters, same faces and clothes, same room${place?` (${place.name})`:''}, same furniture. ${chars.map(c=>`${c.name}: ${c.ref||c.desc}.`).join(' ')} Action: ${s.action}. ${spk&&s.line?`${spk} says in French, slowly and clearly, only these words: "${s.line}". Only ${spk} speaks, clear lip sync.`:'No dialogue.'} Natural sound.`;
+  s.status='vidéo en cours…';renderScenes();
+  try{
+    const base={model:VIDEO_MODEL,prompt,seconds:String(s.seconds),size:'720P',aspect_ratio:$('ratio').value};
+    const modes=P.videoMode?[P.videoMode]:['keyframe','reference','text'];
+    let job,used;
+    for(const m of modes){
+      await videoSlot();
+      const body=m==='keyframe'?{...base,mode:'keyframe',first_frame:s.start}:m==='reference'?{...base,mode:'reference',images:[s.start,...chars.map(c=>c.img)].slice(0,4)}:{...base,mode:'text'};
+      try{job=await api('/v1/videos',body);used=m;break}catch(e){if(e.message==='arrêté')throw e;log(`Mode ${m} refusé (${e.message}).`)}
+    }
+    if(!job)throw new Error('aucun mode accepté');
+    if(used!=='text')P.videoMode=used;
+    const vid=job.video_id||job.id;log(`Scène ${i+1} lancée (mode ${used}).`);
+    for(let t=0;t<500;t++){
+      await sleep(4000); if(RUN.stop)throw new Error('arrêté');
+      let st;try{st=await api(`/agnesapi?video_id=${encodeURIComponent(vid)}&model_name=${VIDEO_MODEL}`,null,'GET')}catch(e){continue}
+      const status=st.status||(st.data&&st.data.status);
+      if(status==='completed'){s.video=st.url||(st.data&&st.data.url)||(st.metadata&&st.metadata.url);break}
+      if(status==='failed')throw new Error(st.error&&(st.error.message||st.error)||'échec');
+    }
+    if(!s.video)throw new Error('délai dépassé');
+    s.status='vidéo prête';log(`Scène ${i+1} prête ✅`);
+  }catch(e){s.status='erreur vidéo : '+e.message;log(`Scène ${i+1} : ${e.message}`)}
+  renderScenes();save();
+}
+async function runAll(fn,filter){
+  RUN.stop=false;['genStarts','genVideos'].forEach(id=>$(id).disabled=true);$('stop').disabled=false;
+  const todo=P.scenes.map((s,i)=>i).filter(i=>filter(P.scenes[i]));
+  for(let n=0;n<todo.length&&!RUN.stop;n++){await fn(todo[n]);$('prog').style.width=((n+1)/todo.length*100)+'%'}
+  ['genStarts','genVideos'].forEach(id=>$(id).disabled=false);$('stop').disabled=true;log(RUN.stop?'Arrêté.':'Terminé.');
+}
+$('genStarts').onclick=()=>runAll(genStart,s=>!s.start);
+$('genVideos').onclick=()=>runAll(genVideo,s=>!s.video);
+$('stop').onclick=()=>{RUN.stop=true;log('Arrêt demandé…')};
+
+/* ================= téléchargement & assemblage ================= */
+function renderDownloads(){
+  $('dlList').innerHTML=P.scenes.map((s,i)=>s.video?`<a class="auto" href="${s.video}" target="_blank" download="scene ${i+1}.mp4"><button class="sm ghost">⬇️ Scène ${i+1}</button></a>`:'').join('')||'<span class="small">Aucune vidéo pour l\'instant.</span>';
+}
+let picked=[];
+$('pickClips').onclick=()=>$('clips').click();
+$('clips').onchange=()=>{picked=[...$('clips').files].sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true}));
+  $('clipList').innerHTML='Ordre : '+picked.map((f,i)=>`${i+1}. ${esc(f.name)}`).join(' · ');$('assemble').disabled=!picked.length};
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('chargement impossible : '+src));document.head.appendChild(s)})}
+let ff;
+async function getFF(){
+  if(ff)return ff;
+  log('Chargement de l\'outil de montage (≈30 Mo, une seule fois)…');
+  await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
+  await loadScript('https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js');
+  const {toBlobURL}=FFmpegUtil; ff=new FFmpegWASM.FFmpeg();
+  ff.on('progress',({progress})=>$('aprog').style.width=Math.min(100,progress*100)+'%');
+  const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+  await ff.load({coreURL:await toBlobURL(core+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(core+'/ffmpeg-core.wasm','application/wasm'),
+    classWorkerURL:await toBlobURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js','text/javascript')});
+  return ff;
+}
+$('assemble').onclick=async()=>{
+  $('assemble').disabled=true;
+  try{
+    const f=await getFF(),{fetchFile}=FFmpegUtil;
+    for(let i=0;i<picked.length;i++)await f.writeFile(`c${i}.mp4`,await fetchFile(picked[i]));
+    await f.writeFile('list.txt',picked.map((_,i)=>`file 'c${i}.mp4'`).join('\n'));
+    log('Assemblage…');
+    let rc=await f.exec(['-f','concat','-safe','0','-i','list.txt','-c','copy','-movflags','+faststart','out.mp4']);
+    if(rc!==0){log('Formats différents : réencodage (plus long)…');
+      const ins=picked.flatMap((_,i)=>['-i',`c${i}.mp4`]),fc=picked.map((_,i)=>`[${i}:v][${i}:a]`).join('')+`concat=n=${picked.length}:v=1:a=1[v][a]`;
+      rc=await f.exec([...ins,'-filter_complex',fc,'-map','[v]','-map','[a]','-c:v','libx264','-preset','veryfast','-crf','22','-c:a','aac','-movflags','+faststart','out.mp4'])}
+    if(rc!==0)throw new Error('échec du montage');
+    const data=await f.readFile('out.mp4'),url=URL.createObjectURL(new Blob([data.buffer],{type:'video/mp4'}));
+    $('final').innerHTML=`<video src="${url}" controls playsinline style="width:100%;max-width:420px;border-radius:12px"></video><div style="margin-top:8px"><a href="${url}" download="mon-sketch.mp4"><button>💾 Télécharger la vidéo finale</button></a></div>`;
+    $('aprog').style.width='100%';log('Vidéo finale prête ✅');
+  }catch(e){log('Erreur montage : '+e.message);alert('Erreur montage : '+e.message)}
+  $('assemble').disabled=false;
+};
+
+/* ================= démarrage ================= */
+load();renderItems('chars');renderItems('places');renderScenes();
+</script>
+</body>
+</html>
