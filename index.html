@@ -309,21 +309,30 @@ function renderScenes(){
 }
 
 /* ================= image de départ (cohérence) ================= */
+function contSource(i){
+  const s=P.scenes[i]; if(!s.cont)return null;
+  for(let j=i-1;j>=0;j--){const p=P.scenes[j];if(p.place!==s.place)break;
+    if(p.start&&p.chars.length===s.chars.length&&s.chars.every(c=>p.chars.includes(c)))return p}
+  return null;
+}
 async function genStart(i){
   const s=P.scenes[i],place=P.places.find(p=>p.id===s.place),chars=s.chars.map(id=>P.chars.find(c=>c.id===id)).filter(Boolean);
-  const prev=i>0&&s.cont?P.scenes[i-1]:null;
-  if(prev&&!prev.start){alert(`Crée d'abord l'image de départ de la scène ${i}.`);return false}
   if(place&&!place.img||chars.some(c=>!c.img)){alert('Crée d\'abord les photos du lieu et des personnages de cette scène (étapes 2 et 3).');return false}
+  const src=contSource(i),N=chars.length,who=chars.map(c=>c.name).join(' and ')||'nobody';
   s.status='création de l\'image…';renderScenes();
   try{
-    const refs=[],parts=[];
-    if(prev){refs.push(prev.start);parts.push(`Image ${refs.length} is the PREVIOUS SHOT of the same scene: keep exactly the same room, same furniture and their positions, same lighting, same camera side, and the same clothing; characters keep their positions (sitting stays sitting on the same seat) unless the action below explicitly changes it.`)}
-    if(place){refs.push(place.img);parts.push(`Image ${refs.length} is the LOCATION reference "${place.name}" (${place.ref||place.desc}): reproduce this exact place (furniture, colors, layout). It only defines the room: ignore and never copy any person that may appear in it.`)}
-    chars.forEach(c=>{refs.push(c.img);parts.push(`Image ${refs.length} is the CHARACTER "${c.name}" (${c.ref||c.desc}): same face, same hair, same outfit.`)});
-    const prompt=`One single film frame, ${$('style').value}, ${$('ratio').value} framing. ${parts.join(' ')}
-EXACTLY ${chars.length} person${chars.length>1?'s':''} in the frame: ${chars.map(c=>c.name).join(' and ')||'nobody'}. NO other people anywhere, no extras, no background figures. Framing: medium shot (waist-up), the characters fill most of the frame, faces large, sharp and clearly visible, camera close to them. Action of this shot: ${s.action}. ${s.speaker?nameOf(P.chars,s.speaker)+' is about to speak.':''} No text, no subtitles.`;
+    let refs,prompt;
+    const rules=`EXACTLY ${N} person${N>1?'s':''} in the frame: ${who}. NO other people anywhere, no extras, no duplicates, no background figures. No text, no subtitles.`;
+    if(src){
+      refs=[src.start];
+      prompt=`One single film frame, ${$('style').value}, ${$('ratio').value}. Image 1 is the PREVIOUS SHOT of this same continuous scene: keep the SAME camera position and framing, the SAME room and furniture, the SAME ${N} people with the same faces, hair and clothes, sitting or standing at exactly the SAME places with the same postures. Only change facial expressions and gestures to match this action: ${s.action}. ${s.speaker?nameOf(P.chars,s.speaker)+' is speaking.':''} ${rules}`;
+    }else{
+      refs=[...chars.map(c=>c.img)];const parts=chars.map((c,k)=>`Image ${k+1} is "${c.name}" (${c.ref||c.desc}): same face, hair and outfit.`);
+      if(place){refs.push(place.img);parts.push(`Image ${refs.length} is the location "${place.name}" (${place.ref||place.desc}): use it ONLY for the room, furniture, colors and light; it contains nobody.`)}
+      prompt=`One single film frame, ${$('style').value}, ${$('ratio').value}. ${parts.join(' ')} ${rules} Positions and action: ${s.action}. Framing: medium shot (waist-up), camera close, the characters fill most of the frame, faces large and sharp. ${s.speaker?nameOf(P.chars,s.speaker)+' is about to speak.':''}`;
+    }
     s.start=await image(prompt,sizeFor('scene'),refs.slice(0,4));
-    s.status='image prête';log(`Scène ${i+1} : image de départ créée.`);
+    s.status='image prête';log(`Scène ${i+1} : image de départ créée${src?` (suite de la scène ${P.scenes.indexOf(src)+1})`:''}.`);
   }catch(e){s.status='erreur image : '+e.message;log(`Scène ${i+1} : ${e.message}`)}
   renderScenes();save();return !!s.start;
 }
