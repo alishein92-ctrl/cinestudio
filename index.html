@@ -70,9 +70,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
         <option value="photorealistic cinematic live-action film, real human actors, 35mm film look">Film réaliste</option>
         <option value="realistic handheld smartphone TikTok sketch, real people, natural light">Sketch façon TikTok</option>
         <option value="Pixar-like 3D animated film, expressive stylized human characters">Animation 3D</option>
+        <option value="soft 3D animated cartoon for preschoolers, pastel colors, rounded cute shapes, big friendly eyes, warm gentle lighting, cozy and safe, nothing scary">Dessin animé enfants (3D douce)</option>
       </select></div>
     <div><label>Format</label>
       <select id="ratio"><option value="9:16">Vertical 9:16 (TikTok)</option><option value="16:9">Horizontal 16:9</option><option value="1:1">Carré 1:1</option></select></div>
+  </div>
+  <div class="row" style="margin-top:4px">
+    <div><label>Projet</label><select id="projSel"></select></div>
+    <button class="ghost auto" id="projNew" style="margin-top:22px">＋ Nouveau projet</button>
+    <button class="ghost auto" id="projRen" style="margin-top:22px">✏️ Renommer</button>
   </div>
 </section>
 
@@ -147,9 +153,14 @@ let P={chars:[],places:[],scenes:[],style:'',ratio:'9:16',story:'',videoMode:''}
 const RUN={stop:false,lastVideo:0,busy:new Set()};
 
 function log(m){const l=$('log');l.textContent+=`[${new Date().toLocaleTimeString()}] ${m}\n`;l.scrollTop=l.scrollHeight}
+const PID=new URLSearchParams(location.search).get('p')||'default';
+const pkey=id=>id==='default'?'cinestudio':'cinestudio:'+id;
+function projList(){let l=[];try{l=JSON.parse(store.get('cinestudio_projects')||'[]')}catch(e){}if(!l.some(p=>p.id==='default'))l.unshift({id:'default',name:'Projet 1'});return l}
+function projSave(l){store.set('cinestudio_projects',JSON.stringify(l))}
+function renderProj(){const l=projList();$('projSel').innerHTML=l.map(p=>`<option value="${p.id}" ${p.id===PID?'selected':''}>${esc(p.name)}</option>`).join('')}
 function save(){P.style=$('style').value;P.ratio=$('ratio').value;P.story=$('story').value;
-  if(!store.set('cinestudio',JSON.stringify(P)))log('⚠️ Sauvegarde locale pleine : utilise des images générées plutôt qu\'importées.')}
-function load(){try{const p=JSON.parse(store.get('cinestudio')||'null');if(p)P={...P,...p}}catch(e){}
+  if(!store.set(pkey(PID),JSON.stringify(P)))log('⚠️ Sauvegarde locale pleine : utilise des images générées plutôt qu\'importées.')}
+function load(){try{const p=JSON.parse(store.get(pkey(PID))||'null');if(p)P={...P,...p}}catch(e){}
   if(P.style)$('style').value=P.style; $('ratio').value=P.ratio||'9:16'; $('story').value=P.story||'';
   if(!P.chars.length)P.chars=[newItem()]; if(!P.places.length)P.places=[newItem()];}
 const newItem=()=>({id:uid(),name:'',desc:'',ref:'',img:''});
@@ -417,8 +428,13 @@ $('assemble').onclick=async()=>{
   $('assemble').disabled=false;
 };
 
+/* ================= projets ================= */
+$('projSel').onchange=()=>{location.search='?p='+encodeURIComponent($('projSel').value)};
+$('projNew').onclick=()=>{const name=prompt('Nom du nouveau projet ?','Nouveau projet');if(!name)return;const l=projList(),id=uid();l.push({id,name});projSave(l);location.search='?p='+id};
+$('projRen').onclick=()=>{const l=projList(),p=l.find(x=>x.id===PID);const name=prompt('Nouveau nom ?',p?p.name:'');if(!name)return;if(p)p.name=name;else l.push({id:PID,name});projSave(l);renderProj()};
+
 /* ================= démarrage ================= */
-load();renderItems('chars');renderItems('places');renderScenes();
+renderProj();load();renderItems('chars');renderItems('places');renderScenes();
 </script>
 </body>
 </html>
