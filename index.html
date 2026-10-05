@@ -161,7 +161,7 @@ $('style').onchange=$('ratio').onchange=save;$('story').oninput=save;
 /* ================= appels API (avec nouvelles tentatives) ================= */
 async function api(path,body,method='POST'){
   if(!key())throw new Error('Ajoute ta clé API Agnes (étape 1).');
-  for(let k=0;k<45;k++){
+  for(let k=0;k<(path==='/v1/videos'?100000:45);k++){
     if(RUN.stop&&path==='/v1/videos')throw new Error('arrêté');
     let r,txt;
     try{r=await fetch(API+path,{method,headers:{'Authorization':'Bearer '+key(),'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});txt=await r.text()}
