@@ -121,7 +121,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 <section class="card">
   <h2><span class="num">7</span>Télécharger & assembler</h2>
-  <p class="small">1) Télécharge chaque scène (clic droit sur la vidéo → « Enregistrer la vidéo sous… », nomme-les scene 1, scene 2…). 2) Sélectionne-les ici : le site les colle en un seul MP4.</p>
+  <p class="small">1) Télécharge chaque scène (clic droit sur la vidéo → « Enregistrer la vidéo sous… », nomme-les scene 1, scene 2…). 2) Sélectionne-les ici : le site les rejoue à la suite et enregistre une seule vidéo (aussi long que le sketch).</p>
   <div id="dlList" class="row" style="gap:8px"></div>
   <div class="row" style="margin-top:12px">
     <input type="file" id="clips" accept="video/mp4,video/*" multiple class="hidden">
@@ -378,34 +378,31 @@ let picked=[];
 $('pickClips').onclick=()=>$('clips').click();
 $('clips').onchange=()=>{picked=[...$('clips').files].sort((a,b)=>a.name.localeCompare(b.name,'fr',{numeric:true}));
   $('clipList').innerHTML='Ordre : '+picked.map((f,i)=>`${i+1}. ${esc(f.name)}`).join(' · ');$('assemble').disabled=!picked.length};
-function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('chargement impossible : '+src));document.head.appendChild(s)})}
-let ff;
-async function getFF(){
-  if(ff)return ff;
-  log('Chargement de l\'outil de montage (≈30 Mo, une seule fois)…');
-  await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js');
-  await loadScript('https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js');
-  const {toBlobURL}=FFmpegUtil; ff=new FFmpegWASM.FFmpeg();
-  ff.on('progress',({progress})=>$('aprog').style.width=Math.min(100,progress*100)+'%');
-  const core='https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-  await ff.load({coreURL:await toBlobURL(core+'/ffmpeg-core.js','text/javascript'),wasmURL:await toBlobURL(core+'/ffmpeg-core.wasm','application/wasm'),
-    classWorkerURL:await toBlobURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/814.ffmpeg.js','text/javascript')});
-  return ff;
+async function assembleClips(files){
+  const mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(m=>window.MediaRecorder&&MediaRecorder.isTypeSupported(m));
+  if(!mime)throw new Error("ce navigateur ne sait pas enregistrer de vidéo (utilise Chrome ou Edge)");
+  const vids=await Promise.all(files.map(f=>new Promise((res,rej)=>{const v=document.createElement('video');v.src=URL.createObjectURL(f);v.playsInline=true;v.preload='auto';v.onloadedmetadata=()=>res(v);v.onerror=()=>rej(new Error('vidéo illisible : '+f.name))})));
+  const W=vids[0].videoWidth,H=vids[0].videoHeight,cv=document.createElement('canvas');cv.width=W;cv.height=H;const cx=cv.getContext('2d');
+  const ac=new (window.AudioContext||window.webkitAudioContext)();await ac.resume();const dest=ac.createMediaStreamDestination();
+  const stream=cv.captureStream(30);dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+  const rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8e6,audioBitsPerSecond:160000}),chunks=[];
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  const total=vids.reduce((a,v)=>a+(v.duration||0),0);let done=0;
+  cx.fillStyle='#000';cx.fillRect(0,0,W,H);rec.start(250);
+  for(const v of vids){
+    ac.createMediaElementSource(v).connect(dest);
+    await new Promise(res=>{let raf;const draw=()=>{const r=Math.min(W/v.videoWidth,H/v.videoHeight),w=v.videoWidth*r,h=v.videoHeight*r;cx.fillStyle='#000';cx.fillRect(0,0,W,H);cx.drawImage(v,(W-w)/2,(H-h)/2,w,h);$('aprog').style.width=Math.min(100,(done+v.currentTime)/total*100)+'%';raf=requestAnimationFrame(draw)};
+      v.onended=()=>{cancelAnimationFrame(raf);res()};v.play().then(draw).catch(()=>{cancelAnimationFrame(raf);res()})});
+    done+=v.duration||0;
+  }
+  await new Promise(r=>{rec.onstop=r;rec.stop()});ac.close();
+  return {blob:new Blob(chunks,{type:mime.split(';')[0]}),ext:mime.includes('mp4')?'mp4':'webm'};
 }
 $('assemble').onclick=async()=>{
-  $('assemble').disabled=true;
+  $('assemble').disabled=true;log('Assemblage en cours : les scènes sont rejouées à la suite, laisse cet onglet ouvert…');
   try{
-    const f=await getFF(),{fetchFile}=FFmpegUtil;
-    for(let i=0;i<picked.length;i++)await f.writeFile(`c${i}.mp4`,await fetchFile(picked[i]));
-    await f.writeFile('list.txt',picked.map((_,i)=>`file 'c${i}.mp4'`).join('\n'));
-    log('Assemblage…');
-    let rc=await f.exec(['-f','concat','-safe','0','-i','list.txt','-c','copy','-movflags','+faststart','out.mp4']);
-    if(rc!==0){log('Formats différents : réencodage (plus long)…');
-      const ins=picked.flatMap((_,i)=>['-i',`c${i}.mp4`]),fc=picked.map((_,i)=>`[${i}:v][${i}:a]`).join('')+`concat=n=${picked.length}:v=1:a=1[v][a]`;
-      rc=await f.exec([...ins,'-filter_complex',fc,'-map','[v]','-map','[a]','-c:v','libx264','-preset','veryfast','-crf','22','-c:a','aac','-movflags','+faststart','out.mp4'])}
-    if(rc!==0)throw new Error('échec du montage');
-    const data=await f.readFile('out.mp4'),url=URL.createObjectURL(new Blob([data.buffer],{type:'video/mp4'}));
-    $('final').innerHTML=`<video src="${url}" controls playsinline style="width:100%;max-width:420px;border-radius:12px"></video><div style="margin-top:8px"><a href="${url}" download="mon-sketch.mp4"><button>💾 Télécharger la vidéo finale</button></a></div>`;
+    const {blob,ext}=await assembleClips(picked),url=URL.createObjectURL(blob);
+    $('final').innerHTML=`<video src="${url}" controls playsinline style="width:100%;max-width:420px;border-radius:12px"></video><div style="margin-top:8px"><a href="${url}" download="mon-sketch.${ext}"><button>💾 Télécharger la vidéo finale (${ext.toUpperCase()})</button></a></div>`;
     $('aprog').style.width='100%';log('Vidéo finale prête ✅');
   }catch(e){log('Erreur montage : '+e.message);alert('Erreur montage : '+e.message)}
   $('assemble').disabled=false;
