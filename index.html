@@ -95,7 +95,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   <label>Raconte ton histoire simplement (qui, où, ce qui se passe, la chute)</label>
   <textarea id="story" style="min-height:110px" placeholder="Ex : Une fille rend visite à sa mère et lui annonce, en pleurs, qu'elle veut divorcer…"></textarea>
   <div class="row">
-    <div><label>Nombre de scènes</label><select id="nScenes"><option value="0">Automatique</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option></select></div>
+    <div><label>Nombre de scènes</label><select id="nScenes"><option value="0">Automatique</option><option>3</option><option>4</option><option>5</option><option>6</option><option>8</option><option>10</option><option>12</option><option>15</option></select></div>
     <div><label>&nbsp;</label><button id="write">✍️ Écrire le sketch</button></div>
   </div>
   <p class="small">L'IA découpe en scènes, garde des répliques courtes (elles sont mieux prononcées) et crée les personnages/lieux manquants dans le casting.</p>
@@ -251,10 +251,10 @@ $('write').onclick=async()=>{
   $('write').disabled=true;log('Écriture du sketch…');
   try{
     const cast=P.chars.filter(c=>c.name).map(c=>c.name), places=P.places.filter(p=>p.name).map(p=>p.name), n=+$('nScenes').value;
-    const j=parseJSON(await chat(`Tu es scénariste de sketchs comiques courts pour TikTok. Découpe cette histoire en ${n||'4 à 7'} scènes vidéo de 5 à 10 secondes.
+    const j=parseJSON(await chat(`Tu es scénariste de sketchs comiques courts pour TikTok. Découpe cette histoire en ${n||'6 à 10'} scènes vidéo de 5 à 10 secondes.
 Histoire : ${story}
 Personnages déjà existants : ${cast.join(', ')||'aucun'}. Lieux déjà existants : ${places.join(', ')||'aucun'}.
-Règles : réutilise les personnages et lieux existants quand c'est possible ; garde le même lieu tant que l'histoire ne change pas d'endroit ; UNE seule réplique par scène, en français, 10 mots maximum, facile à prononcer (écris les nombres et prix en toutes lettres) ; la chute dans la dernière scène.
+Règles : réutilise les personnages et lieux existants quand c'est possible ; garde le même lieu tant que l'histoire ne change pas d'endroit ; UNE seule réplique par scène, en français, 10 mots maximum, facile à prononcer (écris les nombres et prix en toutes lettres) ; la chute dans la dernière scène. CONTINUITÉ OBLIGATOIRE : chaque "action" commence par la position exacte de chaque personnage présent (ex : « Camille assise à gauche du canapé, Maman assise à droite ») ; garde exactement les mêmes places et postures d'une scène à l'autre (assis reste assis, debout reste debout, même place sur le même meuble) tant que l'histoire ne dit pas clairement qu'ils bougent ; préfère plusieurs scènes courtes à une scène trop chargée.
 Réponds UNIQUEMENT en JSON :
 {"characters":[{"name":"","look":"description physique en anglais si nouveau personnage"}],
  "places":[{"name":"","look":"description en anglais si nouveau lieu"}],
@@ -334,7 +334,7 @@ async function genVideo(i){
   const s=P.scenes[i]; if(!s.start&&!(await genStart(i)))return;
   const chars=s.chars.map(id=>P.chars.find(c=>c.id===id)).filter(Boolean),place=P.places.find(p=>p.id===s.place);
   const spk=s.speaker?nameOf(P.chars,s.speaker):'';
-  const prompt=`${$('style').value}. Continue exactly from the first frame: same characters, same faces and clothes, same room${place?` (${place.name})`:''}, same furniture. ${chars.map(c=>`${c.name}: ${c.ref||c.desc}.`).join(' ')} Action: ${s.action}. ${spk&&s.line?`${spk} says in French, slowly and clearly, only these words: "${s.line}". Only ${spk} speaks, clear lip sync.`:'No dialogue.'} Natural sound.`;
+  const prompt=`${$('style').value}. Continue exactly from the first frame: same characters, same faces and clothes, same room${place?` (${place.name})`:''}, same furniture. Every character keeps exactly the same posture and place as in the first frame (seated stays seated on the same seat, standing stays standing) unless the action says otherwise. ${chars.map(c=>`${c.name}: ${c.ref||c.desc}.`).join(' ')} Action: ${s.action}. ${spk&&s.line?`${spk} says in French, slowly and clearly, only these words: "${s.line}". Only ${spk} speaks, clear lip sync.`:'No dialogue.'} Natural sound.`;
   s.status='vidéo en cours…';renderScenes();
   try{
     const base={model:VIDEO_MODEL,prompt,seconds:String(s.seconds),size:'720P',aspect_ratio:$('ratio').value};
